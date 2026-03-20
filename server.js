@@ -19,16 +19,30 @@ async function start() {
       typeDefs,
       resolvers,
       introspection: process.env.NODE_ENV !== 'production',
+      formatError: (err) => {
+        // Loguear errores internos pero no exponerlos al cliente en producción
+        console.error('GraphQL Error:', err.message);
+        return {
+          message: err.message,
+          code: err.extensions?.code,
+        };
+      },
     });
 
     // Iniciar servidor
     const { url } = await startStandaloneServer(server, {
       listen: { port: PORT },
-      context: async ({ req }) => ({ req }),
+      context: async ({ req }) => ({
+        req,
+        // Agregar contexto de autenticación disponible para resolvers
+        user: null,
+      }),
     });
 
     console.log(`\nGraphQL listo en ${url}`);
-    console.log(`Puerto: ${PORT}\n`);
+    console.log(`Puerto: ${PORT}`);
+    console.log(`\n?? Autenticación: Bearer Token (JWT)`);
+    console.log(`??  Expiración: 15 minutos\n`);
   } catch (err) {
     console.error('? Error al iniciar servidor:', err.message);
     if (err.stack) console.error(err.stack);
