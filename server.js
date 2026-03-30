@@ -30,13 +30,44 @@ async function start() {
     });
 
     // Iniciar servidor
+    const { getTokenFromContext } = require('./middleware/auth');
+    const { parse } = require('graphql');
     const { url } = await startStandaloneServer(server, {
       listen: { port: PORT },
-      context: async ({ req }) => ({
-        req,
-        // Agregar contexto de autenticación disponible para resolvers
-        user: null,
-      }),
+      context: async ({ req, body }) => {
+        // Analizar el AST y permitir autenticar sin token si aparece en cualquiera
+        let isLogin = false;
+        try {
+          if (body && body.query) {
+            const ast = parse(body.query);
+            if (ast && ast.definitions && ast.definitions.length > 0) {
+              for (const def of ast.definitions) {
+                if (def.kind === 'OperationDefinition' && def.selectionSet && def.selectionSet.selections) {
+                  for (const sel of def.selectionSet.selections) {
+                    if (sel.kind === 'Field' && sel.name && sel.name.value === 'autenticar') {
+                      isLogin = true;
+                      break;
+                    }
+                  }
+                }
+                if (isLogin) break;
+              }
+            }
+          }
+        } catch (e) { /* ignorar errores de parseo */ }
+
+        if (isLogin) return { req, user: null };
+
+        let user = null;
+        try {
+          user = getTokenFromContext({ req });
+        } catch (e) {
+          // No forzar caída del servidor por peticiones sin token.
+          // Los resolvers validarán `context.user`. No imprimir advertencias aquí.
+          user = null;
+        }
+        return { req, user };
+      },
     });
 
     console.log(`\nGraphQL listo en ${url}`);

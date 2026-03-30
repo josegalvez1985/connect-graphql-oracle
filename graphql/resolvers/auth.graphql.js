@@ -7,6 +7,8 @@ const typeDefs = `#graphql
 
   type Query {
     health: String
+    nombreUsuario: String
+    debugUsuario: String
   }
 
   type Mutation {
