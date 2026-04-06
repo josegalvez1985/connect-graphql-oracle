@@ -11,7 +11,7 @@ const authResolvers = {
       // Usar cod_empresa '01' por defecto si no se proporciona
       const empresa = cod_empresa || '01';
 
-      // Paso 1: Intentar conectar con credenciales del usuario (autenticación DB)
+      // Paso 1: Intentar conectar con credenciales del usuario (autenticacion DB)
       let conn;
       try {
         conn = await oracledb.getConnection({
@@ -21,10 +21,10 @@ const authResolvers = {
         });
         await conn.close();
       } catch (err) {
-        return { success: false, message: 'Credenciales inv\u00e1lidas', token: null };
+        return { success: false, message: 'Credenciales invalidas', token: null };
       }
 
-      // Paso 2: Si la conexión fue exitosa, obtener datos del usuario desde AZPATEB.USUARIOS
+      // Paso 2: Si la conexion fue exitosa, obtener datos del usuario desde AZPATEB.USUARIOS
       try {
         const r = await oracledb_config.query(
           'SELECT COD_USUARIO FROM AZPATEB.USUARIOS WHERE UPPER(COD_USUARIO) = UPPER(:u) OR UPPER(USUARIO) = UPPER(:u)',
@@ -38,9 +38,9 @@ const authResolvers = {
 
         // Generar token JWT
         const token = generateToken(username);
-        return { success: true, message: 'Autenticaci\u00f3n exitosa', token };
+        return { success: true, message: 'Autenticacion exitosa', token };
       } catch (err) {
-        return { success: false, message: 'Error en autenticaci\u00f3n', token: null };
+        return { success: false, message: 'Error en autenticacion', token: null };
       }
     },
   },
